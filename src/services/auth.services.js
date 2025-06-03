@@ -1,8 +1,6 @@
 class AuthServices {
-  constructor(userModel, bcrypt, jwt) {
+  constructor(userModel) {
     this.userModel = userModel;
-    this.bcrypt = bcrypt;
-    this.jwt = jwt;
   }
 
   async register(userData) {
@@ -34,7 +32,15 @@ class AuthServices {
         password: userData.password, // Password will be hashed in the model's pre-save hook
       });
 
-      return await newUser.save();
+      const savedUser = await newUser.save();
+
+      return {
+        _id: savedUser._id,
+        email: savedUser.email,
+        isEmailVerified: savedUser.isEmailVerified,
+        createdAt: savedUser.createdAt,
+        updatedAt: savedUser.updatedAt,
+      };
     } catch (error) {
       // You can customize error handling/logging here
       throw new Error(`Registration failed: ${error.message}`);
@@ -50,10 +56,13 @@ class AuthServices {
       const isMatch = await user.comparePassword(password);
       if (!isMatch) throw new Error("Invalid credentials");
 
-      const token = this.jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRATION || "1h",
-      });
-      return { user, token };
+      return {
+        _id: user._id,
+        email: user.email,
+        isEmailVerified: user.isEmailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
     } catch (error) {
       // You can customize error handling/logging here
       throw new Error(`Login failed: ${error.message}`);
